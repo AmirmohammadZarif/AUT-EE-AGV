@@ -29,7 +29,7 @@ char cap [10];
 }  // end of match_callback 
 
 void Loop(){
-    //O
+
     if(Serial.available() > 0){
         String recieved = Serial.read(); 
         inData += recieved;
