@@ -1,14 +1,26 @@
 import cv2
 import numpy as np
-from pid import PIDController
+import matplotlib.pyplot as plt
 
+from simple_pid import PID
+pid = PID(1, 0.5, 0.05, setpoint=0)
+
+
+# Initialize lists to store the control signal and error over time
+control_signal_history = []
+error_history = []
+
+# Create a figure and axis for the plot
+plt.figure()
+plt.xlabel('Time')
+plt.ylabel('Value')
+plt.legend()
 cap = cv2.VideoCapture(0)  
 
 # Define color range
 lower_color = np.array([66, 84, 0])  # Lower color threshold (blue in this example)
 upper_color = np.array([132, 255, 255])  # Upper color threshold
 
-pid_controller = PIDController(Kp=1, Ki=0, Kd=0)
 
 while True:
     # Read frame from camera
@@ -50,8 +62,9 @@ while True:
 
 
             # Calculate the control signal using the PID controller
-            control_signal = pid_controller.calculate(error)
-
+            control_signal = pid(error)
+                
+                
             text = f"Error{error}"
             cv2.putText(frame, text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
@@ -60,6 +73,20 @@ while True:
 
     
             print(text, text_control)
+
+            # Append the control signal and error to the history lists
+            control_signal_history.append(control_signal)
+            error_history.append(error)
+
+            # Plot the control signal and error over time
+            plt.plot(control_signal_history, label='Control Signal',  color='blue')
+            plt.plot(error_history, label='Error',  color='red')
+            
+
+            # Show the plot
+            plt.pause(0.0001)
+            plt.draw()
+
             
 
     cv2.imshow("Perception", frame)
