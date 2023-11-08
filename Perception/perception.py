@@ -1,9 +1,24 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-
+import serial
+import time
 from simple_pid import PID
-pid = PID(1, 0.5, 0.05, setpoint=0)
+pid = PID(1, 0, 0, setpoint=0)
+
+ser = serial.Serial('/dev/cu.usbmodem14101', 57600)
+
+def translate(value, leftMin, leftMax, rightMin, rightMax):
+    # Figure out how 'wide' each range is
+    leftSpan = leftMax - leftMin
+    rightSpan = rightMax - rightMin
+    
+    # Convert the left range into a 0-1 range (float)
+    valueScaled = float(value - leftMin) / float(leftSpan)
+    
+    # Convert the 0-1 range into a value in the right range.
+    return rightMin + (valueScaled * rightSpan)
+
 
 
 # Initialize lists to store the control signal and error over time
@@ -11,26 +26,36 @@ control_signal_history = []
 error_history = []
 
 # Create a figure and axis for the plot
-plt.figure()
-plt.xlabel('Time')
-plt.ylabel('Value')
-plt.legend()
+isPlot = False
+if(isPlot):
+    plt.figure()
+    plt.xlabel('Time')
+    plt.ylabel('Value')
+    plt.legend()
+
 cap = cv2.VideoCapture(0)  
 
 # Define color range
 lower_color = np.array([66, 84, 0])  # Lower color threshold (blue in this example)
 upper_color = np.array([132, 255, 255])  # Upper color threshold
 
+def roi(image):
+    
+    return image[500:700, :]
+
 
 while True:
     # Read frame from camera
     ret, frame = cap.read()
+    frame = roi(frame)
 
+    print(frame.shape)
     # Convert frame to HSV color space
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
     # Apply color filter
     mask = cv2.inRange(hsv, lower_color, upper_color)
+    # mask = roi(mask)
     cv2.imshow('mask', mask)
 
     # Perform morphological operations
@@ -62,31 +87,33 @@ while True:
 
 
             # Calculate the control signal using the PID controller
-            control_signal = pid(error)
+            # control_signal = pid(error)
                 
                 
             text = f"Error{error}"
             cv2.putText(frame, text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
+            control_signal = translate(error, -640, 640, -90, 90)
             text_control = f"Control Signal{control_signal}"
             cv2.putText(frame, text_control, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
-    
-            print(text, text_control)
-
-            # Append the control signal and error to the history lists
-            control_signal_history.append(control_signal)
-            error_history.append(error)
-
-            # Plot the control signal and error over time
-            plt.plot(control_signal_history, label='Control Signal',  color='blue')
-            plt.plot(error_history, label='Error',  color='red')
+            ser.write(("E" + str(int(control_signal))+ "\n").encode())
             
+            print(text, text_control)
+            if(isPlot):
+                # Append the control signal and error to the history lists
+                control_signal_history.append(control_signal)
+                error_history.append(error)
 
-            # Show the plot
-            plt.pause(0.0001)
-            plt.draw()
+                # Plot the control signal and error over time
+                plt.plot(control_signal_history, label='Control Signal',  color='blue')
+                plt.plot(error_history, label='Error',  color='red')
+                
 
+                # Show the plot
+                plt.pause(0.0001)
+                plt.draw()
+            time.sleep(0.5)
             
 
     cv2.imshow("Perception", frame)
