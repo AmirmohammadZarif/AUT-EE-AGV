@@ -1,8 +1,8 @@
 #include <SoftwareSerial.h>
 
 // Pin definitions for software serial
-const int motorDriverRxPin = 2;     // RX pin for motor driver
-const int motorDriverTxPin = 3;     // TX pin for motor driver
+const int motorDriverRxPin = 4;     // RX pin for motor driver
+const int motorDriverTxPin = 5;     // TX pin for motor driver
 
 // Create a software serial object
 SoftwareSerial motorDriverSerial(motorDriverRxPin, motorDriverTxPin);

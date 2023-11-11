@@ -1,8 +1,10 @@
 #include <QTRSensors.h>
 
 #define SETPOINT    3500  // The goal for readLine (center)
-#define KP          0.2   // The P value in PID
-#define KD          1     // The D value in PID
+// #define KP          0.2   // The P value in PID
+// #define KD          1     // The D value in PID
+#define KP          0.038 // The P value in PID
+#define KD          2.76  // The D value in PID
 #define L_MOTOR     9     // Left motor pin
 #define R_MOTOR     10    // Right motor pin
 #define MAX_SPEED   200   // The max speed to set motors to
