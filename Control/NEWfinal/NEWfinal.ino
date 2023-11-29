@@ -1,12 +1,13 @@
 #include <Regexp.h>
-#include <SoftwareSerial.h>
-
+#include <time.h>
 // Pin definitions for software serial
 const int motorDriverRxPin = 4;     // RX pin for motor driver
 const int motorDriverTxPin = 5;     // TX pin for motor driver
 
-// Create a software serial object
-SoftwareSerial motorDriverSerial(motorDriverRxPin, motorDriverTxPin);
+
+unsigned long time1;
+unsigned long time2;
+unsigned long telapsed;
 
 String inData;
 void match_callback(const char *match,          // matching string (not null-terminated)
@@ -56,15 +57,6 @@ void postTransmission()
   digitalWrite(MAX485_DE, 0);
 }
 
-
-// void setup() {
-//   pinMode(MAX485_RE_NEG, OUTPUT);
-//   pinMode(MAX485_DE, OUTPUT);
-  
-//   digitalWrite(MAX485_RE_NEG, 0);
-//   digitalWrite(MAX485_DE, 0);
-//   Serial.begin(115200);
-// }
 void setup() {
 
   pinMode(LED, OUTPUT);
@@ -77,10 +69,12 @@ void setup() {
   digitalWrite(MAX485_DE, 0);
 
   Serial.begin(57600);
-  motorDriverSerial.begin(115200);
+
+  Serial1.begin(115200); 
+  // motorDriverSerial.begin(115200);
 
 
-  node.begin(1, motorDriverSerial);
+  node.begin(1, Serial1);
 
   node.preTransmission(preTransmission);
   node.postTransmission(postTransmission);
@@ -89,17 +83,18 @@ void setup() {
   node.writeSingleRegister(0x200e, 0x08);     // Enable
 
   node.writeSingleRegister(0x200e, 0x10);     // Start
+
+  node.writeSingleRegister(0x200e, 0x08);     // Enable
+  node.writeSingleRegister(0x200e, 0x10);
 }
 
 void control(float error, uint16_t velocity){
- 
-
   int v_l = 0;
   int v_r = 0;
   
   if(error >= 0){
-    v_l = map(error, 0, 90, 20, 50);
-    v_r = map(error, 0, 90, 20, -50);
+    v_l = map(error, 0, 90, 50, 70);
+    v_r = map(error, 0, 90, 50, -70);
   }else if(error < 0){
     v_l = map(error, 0, -90, 50, -70);
     v_r = map(error, 0, -90, 50, 70);
@@ -107,8 +102,7 @@ void control(float error, uint16_t velocity){
   Serial.println("v_l: " + String(v_l));
   Serial.println("v_r: " + String(v_r));
 
-  // int time = 0.1;
-
+  
   // node.clearTransmitBuffer();
   node.setTransmitBuffer(0, -v_l);
   node.setTransmitBuffer(1, v_r);
@@ -117,58 +111,42 @@ void control(float error, uint16_t velocity){
 }
 
 void loop() {
+  // time1 = millis();
   if (Serial.available() > 0) {
     char recieved = Serial.read();
-
     inData += recieved;
     if (recieved == '\n') {
       char parameter = inData[0];
-      // String value = inData.substring(1, inData.length());
-      int angle = inData.toInt();
+      String value = inData.substring(1, inData.length());
+      int angle = value.toInt();
       // Serial.println(parameter);
-      // Serial.println(angle * Pi / 180);
-      control(angle, 20);
-      // inData = "";
-
-      // switch(parameter){
-      //   case 'E':
-      //     Serial.println(parameter);
-      //     // errorToMove(angle * Pi / 180);
-          
-
-      //   break;
-      //   default:
-      //   break;
-      // }
-    delay(10);
+      // Serial.println(angle);
+      inData = "";
+      switch(parameter){
+        case 'E':
+          control(angle, 20);
+          // time2 = millis();
+          // telapsed = time2 - time1;
+          // Serial.println("d_t" + String(telapsed));
+        break;
+        case 'S':
+          // errorToMove(angle * Pi / 180);
+          // control(angle, 0);
+          // node.clearTransmitBuffer();
+          node.setTransmitBuffer(0, 0);
+          node.setTransmitBuffer(1, 0);
+          node.writeMultipleRegisters(0x2088, 2);
+    
+        break;
+        default:
+        break;
+      }
+    // delay(200);
     }
   }
+  
 }
 
-void errorToMove(float error){
-  node.writeSingleRegister(0x200e, 0x08);     // Enable
-
-  node.writeSingleRegister(0x200e, 0x10);
-  int direction = (error > 0) ? 1 : 0;
-  Serial.println(direction);
-  Serial.println((error > 0) ? "Forward" : "Reverse");
-  float angle = abs(error);
-  Serial.println(angle);
-  int velocity = 50; 
-  if(angle < Pi/2 && angle >= Pi/3){
-    TurnInPlace(velocity, angle, direction);
-    Serial.println("State 1: Turn");
-  }else if(angle < Pi/3 && angle >= Pi/36 ){
-    OneWheelTurn(velocity, angle, direction);
-    Serial.println("State 2: OneWheel");
-
-  }else if(angle < Pi/36 && angle >= 0 ){
-    MoveStraight(velocity, 60);
-    Serial.println("State 3: Straight");
-
-  }
-  node.writeSingleRegister(0x200e, 0x07);
-}
 
 double RPMtoMPS (double velocity)
 {
@@ -185,7 +163,9 @@ This function Moves forward until that distance but does not end up with stop co
   node.setTransmitBuffer(0, -velocity);
   node.setTransmitBuffer(1, velocity);
   node.writeMultipleRegisters(0x2088, 2);
-  delay(time * 1000);
+  // delay(time * 1000);
+  delay(100);
+
 }
 
 void TurnInPlace(uint16_t velocity, double angle, bool direction)

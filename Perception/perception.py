@@ -6,8 +6,11 @@ import time
 from simple_pid import PID
 pid = PID(1, 0, 0, setpoint=0)
 
-ser = serial.Serial('/dev/cu.usbmodem14101', 57600)
 
+ser = serial.Serial(port='/dev/cu.usbmodem14201', baudrate=57600)
+stop_counter = 0
+time.sleep(1)
+print("Program is ready!")
 def translate(value, leftMin, leftMax, rightMin, rightMax):
     # Figure out how 'wide' each range is
     leftSpan = leftMax - leftMin
@@ -20,7 +23,8 @@ def translate(value, leftMin, leftMax, rightMin, rightMax):
     return rightMin + (valueScaled * rightSpan)
 
 
-
+error_prev = 0
+error_next = 0
 # Initialize lists to store the control signal and error over time
 control_signal_history = []
 error_history = []
@@ -73,6 +77,7 @@ while True:
         largest_contour = max(contours, key=cv2.contourArea)
 
         # Find the centroid 
+
         M = cv2.moments(largest_contour)
         if M["m00"] != 0:
             cx = int(M["m10"] / M["m00"])
@@ -84,7 +89,7 @@ while True:
             # Calculate error 
             frame_center = frame.shape[1] // 2
             error = cx - frame_center
-
+            
 
             # Calculate the control signal using the PID controller
             # control_signal = pid(error)
@@ -93,13 +98,23 @@ while True:
             text = f"Error{error}"
             cv2.putText(frame, text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
-            control_signal = translate(error, -640, 640, -90, 90)
+            control_signal = translate(error, -1200, 1200, -90, 90)
+
+            error_next = control_signal
+            
             text_control = f"Control Signal{control_signal}"
             cv2.putText(frame, text_control, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
-            ser.write(("E" + str(int(control_signal))+ "\n").encode())
+            print(error, int(control_signal))
             
-            print(text, text_control)
+            print(error_next, error_prev)
+            if(abs(error_next - error_prev) > 10):
+                ser.write(("E" + str(int(control_signal))+ "\n").encode())
+                error_next = control_signal
+                error_prev = control_signal
+            stop_counter = 0
+
+           
             if(isPlot):
                 # Append the control signal and error to the history lists
                 control_signal_history.append(control_signal)
@@ -113,7 +128,13 @@ while True:
                 # Show the plot
                 plt.pause(0.0001)
                 plt.draw()
-            time.sleep(0.5)
+    else:
+        if(stop_counter == 0):
+
+            print("No line found")
+            ser.write(("S0" +"\n").encode())
+            stop_counter+=1
+
             
 
     cv2.imshow("Perception", frame)
