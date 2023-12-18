@@ -108,7 +108,7 @@ while True:
             print(error, int(control_signal))
             
             print(error_next, error_prev)
-            if(abs(error_next - error_prev) > 10):
+            if(abs(error_next - error_prev) > 5):
                 ser.write(("E" + str(int(control_signal))+ "\n").encode())
                 error_next = control_signal
                 error_prev = control_signal

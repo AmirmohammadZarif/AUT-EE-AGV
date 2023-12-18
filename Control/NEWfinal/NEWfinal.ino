@@ -88,24 +88,25 @@ void setup() {
   node.writeSingleRegister(0x200e, 0x10);
 }
 
-void control(float error, uint16_t velocity){
-  int v_l = 0;
-  int v_r = 0;
+void control(float error, int velocity){
+  int v_l = velocity + error;
+  int v_r = velocity - error;
   
-  if(error >= 0){
-    v_l = map(error, 0, 90, 50, 70);
-    v_r = map(error, 0, 90, 50, -70);
-  }else if(error < 0){
-    v_l = map(error, 0, -90, 50, -70);
-    v_r = map(error, 0, -90, 50, 70);
-  }
-  Serial.println("v_l: " + String(v_l));
-  Serial.println("v_r: " + String(v_r));
+
+  // if(error >= 0){
+  //   v_l = map(error, 0, 90, 50, 70);
+  //   v_r = map(error, 0, 90, 50, 20);
+  // }else if(error < 0){
+  //   v_l = map(error, 0, -90, 50, 20);
+  //   v_r = map(error, 0, -90, 50, 70);
+  // }
+  Serial.println("v_l: " + String(v_l / 2));
+  Serial.println("v_r: " + String(v_r / 2));
 
   
   // node.clearTransmitBuffer();
-  node.setTransmitBuffer(0, -v_l);
-  node.setTransmitBuffer(1, v_r);
+  node.setTransmitBuffer(0, -v_l / 2);
+  node.setTransmitBuffer(1, v_r / 2);
   node.writeMultipleRegisters(0x2088, 2);
   // delay(time * 1000);
 }
@@ -124,7 +125,7 @@ void loop() {
       inData = "";
       switch(parameter){
         case 'E':
-          control(angle, 20);
+          control(angle, 90);
           // time2 = millis();
           // telapsed = time2 - time1;
           // Serial.println("d_t" + String(telapsed));
@@ -163,7 +164,6 @@ This function Moves forward until that distance but does not end up with stop co
   node.setTransmitBuffer(0, -velocity);
   node.setTransmitBuffer(1, velocity);
   node.writeMultipleRegisters(0x2088, 2);
-  // delay(time * 1000);
   delay(100);
 
 }
