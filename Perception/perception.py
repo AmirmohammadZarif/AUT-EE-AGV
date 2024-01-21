@@ -7,7 +7,7 @@ from simple_pid import PID
 pid = PID(1, 0, 0, setpoint=0)
 
 
-ser = serial.Serial(port='/dev/cu.usbmodem14201', baudrate=57600)
+ser = serial.Serial(port='/dev/cu.usbmodem14101', baudrate=57600)
 stop_counter = 0
 time.sleep(1)
 print("Program is ready!")
@@ -40,8 +40,8 @@ if(isPlot):
 cap = cv2.VideoCapture(0)  
 
 # Define color range
-lower_color = np.array([66, 84, 0])  # Lower color threshold (blue in this example)
-upper_color = np.array([132, 255, 255])  # Upper color threshold
+lower_color = np.array([66, 84, 0])  
+upper_color = np.array([132, 255, 255])  
 
 def roi(image):
     
@@ -66,7 +66,7 @@ while True:
     kernel = np.ones((5, 5), np.uint8)
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-
+    cv2.imshow("newMask",mask)
     # Find contours in the binary image
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -82,7 +82,6 @@ while True:
         if M["m00"] != 0:
             cx = int(M["m10"] / M["m00"])
             cy = int(M["m01"] / M["m00"])
-
             # Draw centroid on the frame
             cv2.circle(frame, (cx, cy), 5, (0, 255, 0), -1)
 
@@ -108,10 +107,10 @@ while True:
             print(error, int(control_signal))
             
             print(error_next, error_prev)
-            if(abs(error_next - error_prev) > 5):
-                ser.write(("E" + str(int(control_signal))+ "\n").encode())
-                error_next = control_signal
-                error_prev = control_signal
+            # if(abs(error_next - error_prev) > 5):
+            ser.write(("E" + str(int(control_signal))+ "\n").encode())
+            error_next = control_signal
+            error_prev = control_signal
             stop_counter = 0
 
            

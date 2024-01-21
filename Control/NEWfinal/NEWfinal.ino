@@ -92,16 +92,18 @@ void control(float error, int velocity){
   int v_l = velocity + error;
   int v_r = velocity - error;
   
-
+  // int v_l = 0;
+  // int v_r = 0;
   // if(error >= 0){
-  //   v_l = map(error, 0, 90, 50, 70);
-  //   v_r = map(error, 0, 90, 50, 20);
+  //   // Turn Right
+  //   v_l = map(error, 0, 90, 40, 90);
+  //   v_r = map(error, 0, 90, 40, 30);
   // }else if(error < 0){
-  //   v_l = map(error, 0, -90, 50, 20);
-  //   v_r = map(error, 0, -90, 50, 70);
+  //   v_l = map(error, 0, -90, 40, 30);
+  //   v_r = map(error, 0, -90, 40, 90);
   // }
-  Serial.println("v_l: " + String(v_l / 2));
-  Serial.println("v_r: " + String(v_r / 2));
+  // Serial.println("v_l: " + String(v_l / 2));
+  // Serial.println("v_r: " + String(v_r / 2));
 
   
   // node.clearTransmitBuffer();
